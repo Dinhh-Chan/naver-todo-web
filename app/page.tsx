@@ -19,13 +19,13 @@ import { AIDashboard } from "@/components/ai-dashboard"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { SyncStatus } from "@/components/sync-status"
 import { LeftSidebar } from "@/components/left-sidebar"
-import { Kanban, Calendar, List, Plus, CheckCircle2, Clock, AlertTriangle, BarChart3, FolderOpen } from "lucide-react"
+import { Kanban, Calendar, List, Plus, CheckCircle2, Clock, AlertTriangle, BarChart3, FolderOpen, Menu } from "lucide-react"
 
 export default function HomePage() {
   const [currentView, setCurrentView] = useState<ViewMode>("list")
   const [showTaskForm, setShowTaskForm] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Start closed on mobile
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([])
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const { tasks, stats, addTask, addTasks, updateTask, deleteTask, toggleTaskStatus } = useTasks()
@@ -35,6 +35,22 @@ export default function HomePage() {
   useEffect(() => {
     setFilteredTasks(tasks)
   }, [tasks])
+
+  // Initialize sidebar state based on screen size
+  useEffect(() => {
+    const checkScreenSize = () => {
+      if (window.innerWidth >= 1024) { // lg breakpoint
+        setIsSidebarOpen(true)
+      } else {
+        setIsSidebarOpen(false)
+      }
+    }
+
+    checkScreenSize()
+    window.addEventListener('resize', checkScreenSize)
+    
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
 
   const viewButtons = [
     { mode: "list" as ViewMode, icon: List, label: "Danh sách" },
@@ -137,9 +153,19 @@ export default function HomePage() {
       <header className="border-b bg-card sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">AnyF Time Manager</h1>
-              <p className="text-sm text-muted-foreground">Quản lý công việc học tập thông minh với AI</p>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className="lg:hidden"
+              >
+                <Menu className="h-4 w-4" />
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">AnyF Time Manager</h1>
+                <p className="text-sm text-muted-foreground">Quản lý công việc học tập thông minh với AI</p>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <SmartNotifications tasks={tasks} onTaskClick={(taskId) => {
@@ -158,7 +184,8 @@ export default function HomePage() {
         </div>
       </header>
 
-      <div className={`container mx-auto px-4 py-6 transition-all duration-300 ${isSidebarOpen ? 'ml-80' : 'ml-20'}`}>
+      <div className={`transition-all duration-300 ${isSidebarOpen ? 'lg:ml-80 ml-0' : 'ml-0'}`}>
+        <div className="container mx-auto px-4 py-6">
         
         {/* AI Dashboard for analytics view */}
         {currentView === "analytics" && (
@@ -278,6 +305,7 @@ export default function HomePage() {
             {currentView === "analytics" && <AnalyticsView tasks={filteredTasks} stats={stats} />}
           </div>
         )}
+        </div>
       </div>
 
       {/* Left Sidebar */}
