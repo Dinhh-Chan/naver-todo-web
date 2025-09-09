@@ -197,7 +197,8 @@ export function LeftSidebar({
         variant="outline"
         size="sm"
         onClick={onToggle}
-        className="fixed left-4 top-20 z-50"
+        className="fixed left-4 top-20 z-50 shadow-lg bg-background hover:bg-accent"
+        title="Mở sidebar"
       >
         <Settings className="h-4 w-4" />
       </Button>
@@ -205,15 +206,30 @@ export function LeftSidebar({
   }
 
   return (
-    <div className="fixed left-0 top-0 h-full w-80 bg-background border-r shadow-lg z-40 overflow-y-auto">
-      <div className="p-4 space-y-4">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden" 
+          onClick={onToggle}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <div className={`fixed left-0 top-0 h-full w-80 max-w-[90vw] bg-background border-r shadow-lg z-40 flex flex-col transform transition-transform duration-300 ${
+        isOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        {/* Header - Fixed */}
+        <div className="flex items-center justify-between p-4 border-b bg-background">
           <h3 className="text-lg font-semibold">Sidebar</h3>
           <Button variant="ghost" size="sm" onClick={onToggle}>
             <X className="h-4 w-4" />
           </Button>
         </div>
+
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-4 space-y-4">
 
         {/* Quick Add Task */}
         <Collapsible open={openSections.quickAdd} onOpenChange={() => toggleSection("quickAdd")}>
@@ -722,7 +738,7 @@ export function LeftSidebar({
           <CollapsibleTrigger asChild>
             <Button variant="ghost" className="w-full justify-between p-0 h-auto">
               <div className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
+                <Zap className="h-4 w-4" />
                 <span>Tích hợp</span>
               </div>
               {openSections.integrations ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -732,7 +748,9 @@ export function LeftSidebar({
             <IntegrationsPanel tasks={tasks} onAddTasks={onAddTasks} />
           </CollapsibleContent>
         </Collapsible>
+        </div>
       </div>
-    </div>
+      </div>
+    </>
   )
 }
