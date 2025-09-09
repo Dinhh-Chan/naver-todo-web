@@ -53,21 +53,28 @@ interface LeftSidebarProps {
   currentView: ViewMode
   onViewChange: (view: ViewMode) => void
   onProjectSelect: (project: Project) => void
+  onCollapse?: () => void
+  onExpand?: () => void
 }
 
-export function LeftSidebar({ 
-  isOpen, 
-  onToggle, 
-  tasks, 
+export function LeftSidebar({
+  isOpen,
+  onToggle,
+  tasks,
   projects,
-  onAddTask, 
+  onAddTask,
   onAddTasks,
-  onUpdateTask, 
+  onUpdateTask,
   onFilterTasks,
   currentView,
   onViewChange,
-  onProjectSelect
+  onProjectSelect,
+  onCollapse,
+  onExpand
 }: LeftSidebarProps) {
+  const [isHovered, setIsHovered] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [collapseTimeout, setCollapseTimeout] = useState<NodeJS.Timeout | null>(null)
   // Quick Add Task State
   const [quickAdd, setQuickAdd] = useState({
     title: "",
@@ -111,7 +118,55 @@ export function LeftSidebar({
     if (savedSettings) {
       setSettings(JSON.parse(savedSettings))
     }
-  }, [])
+    
+    // Auto-collapse sidebar after 3 seconds of inactivity
+    const timer = setTimeout(() => {
+      if (isOpen && !isHovered) {
+        setIsCollapsed(true)
+      }
+    }, 3000)
+    
+    return () => clearTimeout(timer)
+  }, [isOpen, isHovered])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (collapseTimeout) {
+        clearTimeout(collapseTimeout)
+      }
+    }
+  }, [collapseTimeout])
+
+  // Handle hover events
+  const handleMouseEnter = () => {
+    // Cancel any pending collapse
+    if (collapseTimeout) {
+      clearTimeout(collapseTimeout)
+      setCollapseTimeout(null)
+    }
+    setIsHovered(true)
+    setIsCollapsed(false)
+    onExpand?.() // Notify parent that sidebar is expanding
+  }
+
+  const handleMouseLeave = () => {
+    setIsHovered(false)
+    // Delay collapse to allow user to move mouse back
+    const timeout = setTimeout(() => {
+      setIsCollapsed(true)
+      onCollapse?.() // Notify parent that sidebar is collapsing
+      setCollapseTimeout(null)
+    }, 500)
+    setCollapseTimeout(timeout)
+  }
+
+  // Handle collapse button click
+  const handleCollapseClick = () => {
+    setIsCollapsed(true)
+    setIsHovered(false)
+    onCollapse?.() // Notify parent that sidebar is collapsing
+  }
 
   // Save settings to localStorage
   const updateSettings = (newSettings: Partial<typeof settings>) => {
@@ -191,13 +246,107 @@ export function LeftSidebar({
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }))
   }
 
+  // Collapsed state with icons
+  if (isCollapsed && isOpen) {
+    return (
+      <div 
+        className="fixed left-0 top-16 h-full w-[50px] bg-background border-r shadow-lg z-[50] flex flex-col transition-all duration-300"
+        onMouseEnter={handleMouseEnter}
+      >
+        <div className="p-2 space-y-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-8 h-8 p-0"
+            title="Thêm Task Nhanh"
+            onClick={() => setOpenSections(prev => ({ ...prev, quickAdd: !prev.quickAdd }))}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-8 h-8 p-0"
+            title="Dự án"
+            onClick={() => setOpenSections(prev => ({ ...prev, projects: !prev.projects }))}
+          >
+            <FolderOpen className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-8 h-8 p-0"
+            title="Bộ lọc & Tìm kiếm"
+            onClick={() => setOpenSections(prev => ({ ...prev, filters: !prev.filters }))}
+          >
+            <Filter className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-8 h-8 p-0"
+            title="AI Tips"
+            onClick={() => setOpenSections(prev => ({ ...prev, aiTips: !prev.aiTips }))}
+          >
+            <Lightbulb className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-8 h-8 p-0"
+            title="Cài đặt"
+            onClick={() => setOpenSections(prev => ({ ...prev, settings: !prev.settings }))}
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-8 h-8 p-0"
+            title="Thống kê"
+            onClick={() => setOpenSections(prev => ({ ...prev, analytics: !prev.analytics }))}
+          >
+            <BarChart3 className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-8 h-8 p-0"
+            title="Tích hợp"
+            onClick={() => setOpenSections(prev => ({ ...prev, integrations: !prev.integrations }))}
+          >
+            <Zap className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        <div className="mt-auto p-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleCollapseClick}
+            className="w-8 h-8 p-0"
+            title="Thu gọn sidebar"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   if (!isOpen) {
     return (
       <Button
         variant="outline"
         size="sm"
         onClick={onToggle}
-        className="fixed left-4 top-20 z-50 shadow-lg bg-background hover:bg-accent"
+        className="fixed left-4 top-20 z-[70] shadow-lg bg-background hover:bg-accent"
         title="Mở sidebar"
       >
         <Settings className="h-4 w-4" />
@@ -210,26 +359,32 @@ export function LeftSidebar({
       {/* Mobile Overlay */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden" 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden" 
           onClick={onToggle}
         />
       )}
       
       {/* Sidebar */}
-      <div className={`fixed left-0 top-0 h-full w-80 max-w-[90vw] bg-background border-r shadow-lg z-40 flex flex-col transform transition-transform duration-300 ${
+      <div 
+        className={`fixed left-0 top-16 h-full bg-background border-r shadow-lg z-[50] flex flex-col transform transition-all duration-300 ${
         isOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
+        } ${
+          isHovered ? 'w-[250px]' : 'w-[250px]'
+        } max-w-[90vw] lg:max-w-none sm:w-[250px]`}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
         {/* Header - Fixed */}
         <div className="flex items-center justify-between p-4 border-b bg-background">
           <h3 className="text-lg font-semibold">Sidebar</h3>
-          <Button variant="ghost" size="sm" onClick={onToggle}>
+          <Button variant="ghost" size="sm" onClick={handleCollapseClick}>
             <X className="h-4 w-4" />
           </Button>
         </div>
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="p-4 space-y-4">
+        <div className="p-4 pt-6 space-y-6">
 
         {/* Quick Add Task */}
         <Collapsible open={openSections.quickAdd} onOpenChange={() => toggleSection("quickAdd")}>
@@ -249,6 +404,7 @@ export function LeftSidebar({
                   <Label htmlFor="quick-title" className="text-primary font-medium flex items-center gap-2">
                     <Plus className="h-4 w-4" /> Tiêu đề
                   </Label>
+                  <div className="mt-3">
                   <Input
                     id="quick-title"
                     value={quickAdd.title}
@@ -256,12 +412,14 @@ export function LeftSidebar({
                     placeholder="Nhập tiêu đề task..."
                     className="border-primary/30 focus-visible:ring-primary/40 bg-primary/5"
                   />
+                  </div>
                 </div>
 
                 <div>
                   <Label htmlFor="quick-due" className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2">
                     <Calendar className="h-4 w-4" /> Hạn chót
                   </Label>
+                  <div className="mt-3">
                   <Input
                     id="quick-due"
                     type="date"
@@ -269,12 +427,14 @@ export function LeftSidebar({
                     onChange={(e) => setQuickAdd(prev => ({ ...prev, dueDate: e.target.value }))}
                     className="border-blue-300 focus-visible:ring-blue-400 bg-blue-50 dark:bg-blue-950/20"
                   />
+                  </div>
                 </div>
 
                 <div>
                   <Label htmlFor="quick-priority" className="text-amber-600 dark:text-amber-400 font-medium flex items-center gap-2">
                     <Target className="h-4 w-4" /> Độ ưu tiên
                   </Label>
+                  <div className="mt-3">
                   <Select value={quickAdd.priority} onValueChange={(value: Task["priority"]) => setQuickAdd(prev => ({ ...prev, priority: value }))}>
                     <SelectTrigger className="border-amber-300 focus-visible:ring-amber-400 bg-amber-50 dark:bg-amber-950/20">
                       <SelectValue />
@@ -297,12 +457,14 @@ export function LeftSidebar({
                       </SelectItem>
                     </SelectContent>
                   </Select>
+                  </div>
                 </div>
 
                 <div>
                   <Label htmlFor="quick-tags" className="text-purple-600 dark:text-purple-400 font-medium flex items-center gap-2">
                     <TrendingUp className="h-4 w-4" /> Tags (phân cách bằng dấu phẩy)
                   </Label>
+                  <div className="mt-3">
                   <Input
                     id="quick-tags"
                     value={quickAdd.tags}
@@ -320,6 +482,7 @@ export function LeftSidebar({
                       AI gợi ý: <span className="font-semibold">{quickAdd.estimatedTime} phút</span>
                     </p>
                   )}
+                  </div>
                 </div>
 
                 <Button onClick={handleQuickAdd} className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700 text-white" disabled={!quickAdd.title.trim()}>

@@ -21,22 +21,22 @@ export function KanbanColumn({ title, status, tasks, onEdit, onDelete, onTaskMov
   const getStatusIcon = (status: Task["status"]) => {
     switch (status) {
       case "todo":
-        return <Circle className="h-4 w-4 text-muted-foreground" />
+        return <Circle className="h-4 w-4 text-gray-600 dark:text-gray-400" />
       case "in-progress":
-        return <Play className="h-4 w-4 text-secondary" />
+        return <Play className="h-4 w-4 text-orange-600 dark:text-orange-400" />
       case "completed":
-        return <CheckCircle2 className="h-4 w-4 text-primary" />
+        return <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
     }
   }
 
   const getColumnColor = (status: Task["status"]) => {
     switch (status) {
       case "todo":
-        return "border-muted"
+        return "border-gray-200 bg-white/80 dark:bg-gray-800/80"
       case "in-progress":
-        return "border-secondary"
+        return "border-orange-200 bg-white/80 dark:bg-gray-800/80"
       case "completed":
-        return "border-primary"
+        return "border-green-200 bg-white/80 dark:bg-gray-800/80"
     }
   }
 

@@ -40,9 +40,10 @@ import {
 
 interface ProjectsViewProps {
   onProjectSelect?: (project: Project) => void
+  tasks?: any[] // Add tasks prop for filtering
 }
 
-export function ProjectsView({ onProjectSelect }: ProjectsViewProps) {
+export function ProjectsView({ onProjectSelect, tasks = [] }: ProjectsViewProps) {
   const { projects, currentUser, addProject, deleteProject, getProjectStats } = useProjects()
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
@@ -330,7 +331,7 @@ export function ProjectsView({ onProjectSelect }: ProjectsViewProps) {
               </div>
               <div className="text-center p-4 bg-muted rounded-lg">
                 <div className="text-2xl font-bold text-green-500">
-                  {projects.reduce((sum, p) => sum + getProjectStats(p.id).completedTasks, 0)}
+                  {tasks.filter(task => task.status === "completed").length}
                 </div>
                 <div className="text-sm text-muted-foreground">Task hoàn thành</div>
               </div>
@@ -342,7 +343,7 @@ export function ProjectsView({ onProjectSelect }: ProjectsViewProps) {
               </div>
               <div className="text-center p-4 bg-muted rounded-lg">
                 <div className="text-2xl font-bold text-orange-500">
-                  {projects.reduce((sum, p) => sum + getProjectStats(p.id).overdueTasks, 0)}
+                  {tasks.filter(task => task.dueDate && task.dueDate < new Date() && task.status !== "completed").length}
                 </div>
                 <div className="text-sm text-muted-foreground">Task quá hạn</div>
               </div>

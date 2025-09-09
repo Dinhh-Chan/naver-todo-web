@@ -19,6 +19,7 @@ import { AIDashboard } from "@/components/ai-dashboard"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { SyncStatus } from "@/components/sync-status"
 import { LeftSidebar } from "@/components/left-sidebar"
+import { NotificationsDropdown } from "@/components/notifications-dropdown"
 import { Kanban, Calendar, List, Plus, CheckCircle2, Clock, AlertTriangle, BarChart3, FolderOpen, Menu } from "lucide-react"
 
 export default function HomePage() {
@@ -26,6 +27,7 @@ export default function HomePage() {
   const [showTaskForm, setShowTaskForm] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Start closed on mobile
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false) // Sidebar expanded state
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([])
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const { tasks, stats, addTask, addTasks, updateTask, deleteTask, toggleTaskStatus } = useTasks()
@@ -41,8 +43,10 @@ export default function HomePage() {
     const checkScreenSize = () => {
       if (window.innerWidth >= 1024) { // lg breakpoint
         setIsSidebarOpen(true)
+        setIsSidebarExpanded(true) // Start expanded on desktop
       } else {
         setIsSidebarOpen(false)
+        setIsSidebarExpanded(false)
       }
     }
 
@@ -51,6 +55,16 @@ export default function HomePage() {
     
     return () => window.removeEventListener('resize', checkScreenSize)
   }, [])
+
+  // Handle sidebar collapse
+  const handleSidebarCollapse = () => {
+    setIsSidebarExpanded(false)
+  }
+
+  // Handle sidebar expand
+  const handleSidebarExpand = () => {
+    setIsSidebarExpanded(true)
+  }
 
   const viewButtons = [
     { mode: "list" as ViewMode, icon: List, label: "Danh sách" },
@@ -141,17 +155,17 @@ export default function HomePage() {
 
   if (showTaskForm) {
     return (
-      <div className="min-h-screen bg-background p-4">
+      <div className="min-h-screen p-4 bg-black">
         <TaskForm task={editingTask || undefined} onSubmit={handleSubmitTask} onCancel={handleCancelForm} />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-black">
       {/* Header */}
-      <header className="border-b bg-card sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
+      <header className="border-b bg-card sticky top-0 z-[100] h-16">
+        <div className="container mx-auto px-4 py-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Button
@@ -168,6 +182,12 @@ export default function HomePage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <NotificationsDropdown onTaskClick={(taskId) => {
+                const task = tasks.find(t => t.id === taskId)
+                if (task) {
+                  handleEditTask(task)
+                }
+              }} />
               <SmartNotifications tasks={tasks} onTaskClick={(taskId) => {
                 const task = tasks.find(t => t.id === taskId)
                 if (task) {
@@ -184,7 +204,11 @@ export default function HomePage() {
         </div>
       </header>
 
-      <div className={`transition-all duration-300 ${isSidebarOpen ? 'lg:ml-80 ml-0' : 'ml-0'}`}>
+      <div className={`transition-all duration-300 ease-in-out ${
+        isSidebarOpen 
+          ? (isSidebarExpanded ? 'lg:ml-[250px] md:ml-[250px] ml-0' : 'lg:ml-[50px] md:ml-[50px] ml-0') 
+          : 'ml-0'
+      }`}>
         <div className="container mx-auto px-4 py-6">
         
         {/* AI Dashboard for analytics view */}
@@ -197,49 +221,49 @@ export default function HomePage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
+          <Card className="border-blue-300 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 dark:border-blue-600">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tổng Task</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-blue-800 dark:text-blue-200">Tổng Task</CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
-              <p className="text-xs text-muted-foreground">{stats.total === 0 ? "Chưa có task nào" : "Tất cả task"}</p>
+              <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{stats.total}</div>
+              <p className="text-xs text-blue-600 dark:text-blue-400">{stats.total === 0 ? "Chưa có task nào" : "Tất cả task"}</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-orange-300 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 dark:border-orange-600">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Đang làm</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-orange-800 dark:text-orange-200">Đang làm</CardTitle>
+              <Clock className="h-4 w-4 text-orange-600 dark:text-orange-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.inProgress}</div>
-              <p className="text-xs text-muted-foreground">Task đang thực hiện</p>
+              <div className="text-2xl font-bold text-orange-700 dark:text-orange-300">{stats.inProgress}</div>
+              <p className="text-xs text-orange-600 dark:text-orange-400">Task đang thực hiện</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-green-300 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 dark:border-green-600">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Hoàn thành</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-primary" />
+              <CardTitle className="text-sm font-medium text-green-800 dark:text-green-200">Hoàn thành</CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.completed}</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-2xl font-bold text-green-700 dark:text-green-300">{stats.completed}</div>
+              <p className="text-xs text-green-600 dark:text-green-400">
                 {stats.total > 0 ? `${stats.completionRate}% hoàn thành` : "Task đã xong"}
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-red-300 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 dark:border-red-600">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Quá hạn</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-destructive" />
+              <CardTitle className="text-sm font-medium text-red-800 dark:text-red-200">Quá hạn</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.overdue}</div>
-              <p className="text-xs text-muted-foreground">Quá thời hạn</p>
+              <div className="text-2xl font-bold text-red-700 dark:text-red-300">{stats.overdue}</div>
+              <p className="text-xs text-red-600 dark:text-red-400">Quá thời hạn</p>
             </CardContent>
           </Card>
         </div>
@@ -265,7 +289,7 @@ export default function HomePage() {
         {selectedProject ? (
           <ProjectDetailView project={selectedProject} onBack={handleBackFromProject} />
         ) : currentView === "projects" ? (
-          <ProjectsView onProjectSelect={handleProjectSelect} />
+          <ProjectsView onProjectSelect={handleProjectSelect} tasks={tasks} />
         ) : filteredTasks.length === 0 ? (
           <Card>
             <CardHeader>
@@ -321,6 +345,8 @@ export default function HomePage() {
         currentView={currentView}
         onViewChange={setCurrentView}
         onProjectSelect={handleProjectSelect}
+        onCollapse={handleSidebarCollapse}
+        onExpand={handleSidebarExpand}
       />
     </div>
   )

@@ -33,9 +33,9 @@ export function KanbanCard({ task, onEdit, onDelete, isDragging }: KanbanCardPro
 
   return (
     <Card 
-      className={`cursor-grab active:cursor-grabbing transition-all hover:shadow-md ${
+      className={`cursor-grab active:cursor-grabbing transition-all hover:shadow-md bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm ${
         isDragging ? 'opacity-50 rotate-2' : ''
-      } ${isOverdue ? 'border-destructive' : ''}`}
+      } ${isOverdue ? 'border-red-300' : 'border-gray-200 dark:border-gray-700'}`}
       draggable
       onDragStart={(e) => {
         e.dataTransfer.setData('text/plain', task.id);
